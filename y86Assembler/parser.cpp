@@ -1,7 +1,7 @@
 #include <iostream>
 #include "parser.h"
 #include "error_handling.h"
-#include "log.h"
+#include "logging.h"
 
 Parser::Parser(NameMap name_map)
         : name_map(name_map)
@@ -414,4 +414,30 @@ Parser::parse_registers(const std::vector<Token>& tokvec, int index)
     if (tokvec[index+2].t != Token::Type::IDENTIFIER) {
         parse_error("Failed instruction parsing. Invalid register name found. ", tokvec[index+2].loc, "\n");
     }
+}
+
+std::ostream&
+operator<<(std::ostream &stream, const Parser::ParseNode &p)
+{
+    stream << "Index: " << p.index << ", Length: " << p.len << ", Type: ";
+    switch (p.t) {
+
+        case Parser::ParseNode::Type::POS:
+            stream << "Position Directive, Value: " << p.u.value;
+            break;
+        case Parser::ParseNode::Type::ALIGN:
+            stream << "Align Directive, Value: " << p.u.value;
+            break;
+        case Parser::ParseNode::Type::QUAD:
+            stream << "Quad Directive, Value: " << p.u.value;
+            break;
+        case Parser::ParseNode::Type::LABEL:
+            stream << "Label";
+            break;
+        case Parser::ParseNode::Type::INSTRUCTION: {
+            stream << "Instruction";
+            break;
+        }
+    }
+    return stream;
 }

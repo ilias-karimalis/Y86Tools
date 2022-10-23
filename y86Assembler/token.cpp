@@ -3,8 +3,8 @@
 std::ostream&
 operator<<(std::ostream& stream, const Token& token)
 {
-    stream << token.t << ", Source File: " << token.loc.path << ", Row: " << token.loc.row;
-    stream << ", Col: " << token.loc.col << ", Value: ";
+    stream << token.t << ". " << token.loc << ". Value: ";
+
     switch (token.t) {
 
         case Token::Type::INTEGER:
@@ -26,10 +26,6 @@ operator<<(std::ostream& stream, const Token::Type& t)
         case Token::Type::INTEGER:
             stream << "Token::Type::INTEGER";
             return stream;
-
-//        case Token::Type::KEYWORD:
-//            stream << "Token::Type::KEYWORD";
-//            return stream;
 
         case Token::Type::IDENTIFIER:
             stream << "Token::Type::IDENTIFIER";

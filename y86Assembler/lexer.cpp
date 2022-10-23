@@ -3,7 +3,7 @@
 
 #include "lexer.h"
 #include "error_handling.h"
-#include "log.h"
+#include "logging.h"
 
 std::vector<Token> Lexer::lex(const std::filesystem::path& p) {
 
@@ -99,6 +99,14 @@ std::vector<Token> Lexer::lex(const std::filesystem::path& p) {
                 col += 1;
                 break;
             }
+
+            case '(':
+                todo("Implement '(' lexing");
+                break;
+
+            case ')':
+                todo("Implement ')' lexing");
+                break;
 
             case '0':
                 if (i + 2 < file_len && (source_file[i + 1] == 'x' || source_file[i + 1] == 'X')) {

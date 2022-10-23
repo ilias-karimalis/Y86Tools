@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "error_handling.h"
+#include "logging.h"
 
 int main(int argc, char** argv)
 {
@@ -15,5 +16,9 @@ int main(int argc, char** argv)
     auto res = lexer.lex(p);
     auto parser = Parser(std::move(lexer.name_map));
     auto pnode_vec = parser.parse(res);
+
+    for (auto p : pnode_vec) {
+        log(p, "\n");
+    }
 
 }
