@@ -73,7 +73,21 @@ Parser::parse(const std::vector<Token>& tokvec)
                 // Possible ParseNode Types that this has to parse:
                 //      - Label
                 //      - Instruction.
-                auto node = parse_identifier(tokvec, i);
+                ParseNode node = {};
+
+                // Try parsing an instruction
+                auto name_index = std::find(names.begin(), names.end(), tok.u.name) - names.begin();
+                log("Name Index: ", name_index, "\n");
+                if (name_index >=  ParseNode::HALT && name_index <= ParseNode::POPQ)
+                {
+                    node = parse_instruction(tokvec, i, static_cast<ParseNode::NameIndices>(name_index));
+                }
+
+                // We are parsing a Label
+                else {
+                    parse_colon(tokvec, i+1);
+                    node = {.index = i, .len = 2, .t = ParseNode::Type::LABEL};
+                }
                 i += node.len;
                 ret.emplace_back(node);
                 break;
@@ -134,51 +148,13 @@ Parser::parse_immediate(const std::vector<Token>& tokvec, int index)
 }
 
 Parser::ParseNode
-Parser::parse_identifier(const std::vector<Token> &tokvec, int index)
-{
-    auto tok = tokvec[index];
-
-    // Check if tokvec[index] matches one of the instructions.
-    auto name_index = std::find(names.begin(), names.end(), tok.u.name) - names.begin();
-    if (name_index >=  ParseNode::HALT && name_index <= ParseNode::POPQ)
-    {
-        return parse_instruction(tokvec, index, static_cast<ParseNode::NameIndices>(name_index));
-    }
-
-    // We are parsing a Label
-    ParseNode node = { .index = index, .len = 2, .t = ParseNode::Type::LABEL };
-    if (index+1 >= tokvec.size() || tokvec[index+1].u.im != Token::Immediate::COLON) {
-        parse_error("Invalid identifier found: ", tokvec[index].u.name, ". ", tokvec[index].loc, "\n");
-    }
-    return node;
-}
-
-
-void
-Parser::parse_registers(const std::vector<Token>& tokvec, int index)
-{
-    if (index + 2 >= tokvec.size()) {
-        parse_error("Failed instruction parsing. Instruction too short. ", tokvec[index].loc, "\n");
-    }
-
-    if (tokvec[index].t != Token::Type::IDENTIFIER) {
-        parse_error("Failed instruction parsing. Invalid register name found. ", tokvec[index].loc, "\n");
-    }
-    if (tokvec[index+1].t != Token::Type::IMMEDIATE && tokvec[index].u.im != Token::Immediate::COMMA) {
-        parse_error("Failed instruction parsing. Comma not found. ", tokvec[index+1].loc, "\n");
-    }
-    if (tokvec[index+2].t != Token::Type::IDENTIFIER) {
-        parse_error("Failed instruction parsing. Invalid register name found. ", tokvec[index+2].loc, "\n");
-    }
-}
-
-
-Parser::ParseNode
 Parser::parse_instruction(const std::vector<Token> &tokvec,
                           int i,
                           Parser::ParseNode::NameIndices name_index)
 {
-    Parser::ParseNode node = { .index = i, .t = ParseNode::Type::INSTRUCTION };
+    size_t size = tokvec.size();
+    auto tok = tokvec[i];
+    Parser::ParseNode node = {.index = i, .t = ParseNode::Type::INSTRUCTION};
     switch (name_index) {
 
         case Parser::ParseNode::HALT:
@@ -192,60 +168,122 @@ Parser::parse_instruction(const std::vector<Token> &tokvec,
             return node;
 
         case Parser::ParseNode::RRMOVQ:
-            // Indentifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::RRMOVQ;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVLE:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVLE;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVL:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVL;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVE:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVE;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVNE:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVNE;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVGE:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVGE;
             node.len = 4;
             return node;
 
         case Parser::ParseNode::CMOVG:
-            // Identifier "," Identifier
-            parse_registers(tokvec, i + 1);
+            // Ident "," Ident
+            if (i + 3 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            parse_ident(tokvec, i+1);
+            parse_comma(tokvec, i+2);
+            parse_ident(tokvec, i+3);
             node.u.ins = Parser::ParseNode::Instruction::CMOVG;
             node.len = 4;
             return node;
 
-        case Parser::ParseNode::IRMOVQ:
-            // "$", (Integer or Identifier), ",", Identifier
-            error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
-            break;
+        case Parser::ParseNode::IRMOVQ: {
+            // [("$", Integer) or Ident], ",", Ident
+            if (i + 1 >= size) {
+                parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+            }
+            auto len = 0;
+            // There's two cases
+            // 1. "$"
+            if (tokvec[i+1].t == Token::Type::IMMEDIATE && tokvec[i+1].u.im == Token::Immediate::DOLLAR_SIGN) {
+                // First we need to check that there's enough element left in tokvec
+                if (i + 4 >= size) {
+                    parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+                }
+                parse_integer(tokvec, i+2);
+                parse_comma(tokvec, i+3);
+                parse_ident(tokvec, i+4);
+                node.len = 5;
+            }
+            // 2. Ident
+            else {
+                if (i + 3 >= size) {
+                    parse_error("Failed instruction parsing. Instruction too short. ", tok.loc, "\n");
+                }
+                parse_ident(tokvec, i+1);
+                parse_comma(tokvec, i+2);
+                parse_ident(tokvec, i+3);
+                node.len = 4;
+            }
+            node.u.ins = ParseNode::Instruction::IRMOVQ;
+            return node;
+        }
         case Parser::ParseNode::RMMOVQ:
-            // Identifier, ",", Integer, "(", Ident, ")"
+            // Ident, ",", Integer, "(", Ident, ")"
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
             break;
         case Parser::ParseNode::MRMOVQ:
@@ -253,19 +291,19 @@ Parser::parse_instruction(const std::vector<Token> &tokvec,
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
             break;
         case Parser::ParseNode::ADDQ:
-            // Identifier "," Identifier
+            // Ident "," Ident
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
             break;
         case Parser::ParseNode::SUBQ:
-            // Identifier "," Identifier
+            // Ident "," Ident
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
             break;
         case Parser::ParseNode::ANDQ:
-            // Identifier "," Identifier
+            // Ident "," Ident
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
             break;
         case Parser::ParseNode::XORQ:
-            // Identifier "," Identifier
+            // Ident "," Ident
             error("TODO: Function: ", __FUNCTION__, " Line Number: ", __LINE__, "\n");
 
             break;
@@ -319,4 +357,61 @@ Parser::parse_instruction(const std::vector<Token> &tokvec,
 
 
     return {};
+}
+
+void Parser::parse_integer(const std::vector<Token>& tokvec, int i) {
+    if (tokvec[i].t != Token::Type::INTEGER) {
+        parse_error("Expected Integer not found. ", tokvec[i].loc, "\n");
+    }
+}
+
+void Parser::parse_ident(const std::vector<Token>& tokvec, int i) {
+    auto tok = tokvec[i];
+    if (tok.t != Token::Type::IDENTIFIER) {
+        parse_error("Expected Identifier not found. ", tok.loc, "\n");
+    }
+}
+
+void Parser::parse_period(const std::vector<Token>& tokvec, int i) {
+    auto tok = tokvec[i];
+    if (tok.t != Token::Type::IMMEDIATE || tok.u.im != Token::Immediate::PERIOD) {
+        parse_error("Expected Period ('.') not found. ", tok.loc, "\n");
+    }
+}
+
+void Parser::parse_comma(const std::vector<Token>& tokvec, int i) {
+    auto tok = tokvec[i];
+    if (tok.t != Token::Type::IMMEDIATE || tok.u.im != Token::Immediate::COMMA) {
+        parse_error("Expected Comma (',') not found. ", tok.loc, "\n");
+    }
+}
+
+void Parser::parse_colon(const std::vector<Token>& tokvec, int i) {
+    auto tok = tokvec[i];
+    if (tok.t != Token::Type::IMMEDIATE || tok.u.im != Token::Immediate::COLON) {
+        parse_error("Expected Colon (':') not found. ", tok.loc, "\n");
+    }
+}
+void Parser::parse_dollar_sign(const std::vector<Token>& tokvec, int i) {
+    auto tok = tokvec[i];
+    if (tok.t != Token::Type::IMMEDIATE || tok.u.im != Token::Immediate::DOLLAR_SIGN) {
+        parse_error("Expected Dollar Sign ('$') not found. ", tok.loc, "\n");
+    }
+}
+
+void
+Parser::parse_registers(const std::vector<Token>& tokvec, int index)
+{
+    if (index + 2 >= tokvec.size()) {
+    }
+
+    if (tokvec[index].t != Token::Type::IDENTIFIER) {
+        parse_error("Failed instruction parsing. Invalid register name found. ", tokvec[index].loc, "\n");
+    }
+    if (tokvec[index+1].t != Token::Type::IMMEDIATE || tokvec[index].u.im != Token::Immediate::COMMA) {
+        parse_error("Failed instruction parsing. Comma not found. ", tokvec[index+1].loc, "\n");
+    }
+    if (tokvec[index+2].t != Token::Type::IDENTIFIER) {
+        parse_error("Failed instruction parsing. Invalid register name found. ", tokvec[index+2].loc, "\n");
+    }
 }

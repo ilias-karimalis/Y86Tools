@@ -57,9 +57,17 @@ struct Parser {
 
     ParseNode parse_immediate(const std::vector<Token>& tokvec, int index);
 
-    ParseNode parse_identifier(const std::vector<Token> &tokvec, int index);
 
     ParseNode parse_instruction(const std::vector<Token> &tokvec, int i, ParseNode::NameIndices name_index);
+
+    // Primitive Parsers.
+    void parse_integer(const std::vector<Token>& tokvec, int i);
+    void parse_ident(const std::vector<Token>& tokvec, int i);
+    void parse_period(const std::vector<Token>& tokvec, int i);
+    void parse_comma(const std::vector<Token>& tokvec, int i);
+    void parse_colon(const std::vector<Token>& tokvec, int i);
+    void parse_dollar_sign(const std::vector<Token>& tokvec, int i);
+
 
     void parse_registers(const std::vector<Token> &vector, int index);
 
